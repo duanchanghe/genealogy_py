@@ -1,3 +1,8 @@
 Django>=5.2
 graphene-django>=3.2.3
 django-graphql-jwt>=0.4.0 
+django-graphql-auth>=1.1.0
+# django-graphql-relay
+# django-graphql-core
+# django-graphql-django
+# django-graphql-jwt

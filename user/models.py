@@ -29,8 +29,7 @@ class VerificationCode(models.Model):
 
 
 class Family(models.Model):
-    family_id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False, verbose_name='家族ID')
-    family_code = models.CharField(max_length=10, unique=True, verbose_name='家族编码')
+    code = models.CharField(max_length=10, unique=True, verbose_name='家族编码')
     name = models.CharField(max_length=100, verbose_name='家族名称')
     description = models.TextField(blank=True, null=True, verbose_name='家族描述')
     location = models.ForeignKey(Location, null=True, blank=True, on_delete=models.SET_NULL, related_name='families', verbose_name='家族位置')
@@ -43,7 +42,6 @@ class Family(models.Model):
         return self.name
     
 class Relationship(models.Model):
-    relationship_id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False, verbose_name='关系ID')
     from_user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='from_user', verbose_name='关系发起人')
     to_user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='to_user', verbose_name='关系接收人')
     relationship_type = models.CharField(max_length=50, choices=(('parent', '父母'), ('child', '子女'), ('sibling', '兄弟姐妹'), ('spouse', '配偶')), verbose_name='关系类型')

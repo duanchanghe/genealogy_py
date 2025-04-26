@@ -1,8 +1,8 @@
 import graphene
-from user.graphql.queries import UserQuery
+from user.graphql.queries import RelayQuery
 from user.graphql.mutations import UserMutation
 
-class Query(UserQuery, graphene.ObjectType):
+class Query(RelayQuery, graphene.ObjectType):
     pass
 
 class Mutation(UserMutation, graphene.ObjectType):

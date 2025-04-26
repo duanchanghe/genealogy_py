@@ -2,70 +2,28 @@ import graphene
 from graphql_jwt.decorators import login_required
 from user.graphql.types import UserType, LocationType, FamilyType
 from user.models import User, Location, Family
+from graphql_auth import mutations
+from graphene.relay import ClientIDMutation
 
-class CreateLocation(graphene.Mutation):
-    """
-    创建位置
-    
-    示例:
-    mutation {
-        createLocation(
-            latitude: "39.9042"
-            longitude: "116.4074"
-            address: "北京市东城区"
-        ) {
-            location {
-                id
-                latitude
-                longitude
-                address
-            }
-        }
-    }
-    """
-    class Arguments:
+class CreateLocation(ClientIDMutation):
+    class Input:
         latitude = graphene.Decimal(required=True)
         longitude = graphene.Decimal(required=True)
         address = graphene.String()
 
     location = graphene.Field(LocationType)
 
-    def mutate(self, info, latitude, longitude, address=None):
+    @login_required
+    def mutate_and_get_payload(root, info, **input):
         location = Location.objects.create(
-            latitude=latitude,
-            longitude=longitude,
-            address=address
+            latitude=input.get('latitude'),
+            longitude=input.get('longitude'),
+            address=input.get('address')
         )
         return CreateLocation(location=location)
 
-class CreateFamily(graphene.Mutation):
-    """
-    创建家族
-    
-    示例:
-    mutation {
-        createFamily(
-            familyCode: "FAM001"
-            name: "张氏家族"
-            description: "张氏家族描述"
-            locationId: "1"
-        ) {
-            family {
-                family_id
-                family_code
-                name
-                description
-                location {
-                    id
-                    latitude
-                    longitude
-                    address
-                }
-            }
-        }
-    }
-    """
-    class Arguments:
+class CreateFamily(ClientIDMutation):
+    class Input:
         family_code = graphene.String(required=True)
         name = graphene.String(required=True)
         description = graphene.String()
@@ -73,73 +31,21 @@ class CreateFamily(graphene.Mutation):
 
     family = graphene.Field(FamilyType)
 
-    def mutate(self, info, family_code, name, description=None, location_id=None):
+    def mutate_and_get_payload(root, info, **input):
         family = Family.objects.create(
-            family_code=family_code,
-            name=name,
-            description=description
+            family_code=input.get('family_code'),
+            name=input.get('name'),
+            description=input.get('description')
         )
         
-        if location_id:
-            family.location = Location.objects.get(pk=location_id)
+        if input.get('location_id'):
+            family.location = Location.objects.get(pk=input.get('location_id'))
             family.save()
             
         return CreateFamily(family=family)
 
-class CreateUser(graphene.Mutation):
-    """
-    创建用户
-    
-    示例:
-    mutation {
-        createUser(
-            username: "张三"
-            password: "password123"
-            firstName: "三"
-            lastName: "张"
-            email: "zhangsan@example.com"
-            birthDate: "1990-01-01"
-            deathDate: null
-            milkName: "小张"
-            phone: "13800138000"
-            gender: "male"
-            birthPlaceId: "1"
-            burialPlaceId: null
-            familyId: "1"
-        ) {
-            user {
-                id
-                username
-                first_name
-                last_name
-                email
-                phone
-                birth_date
-                death_date
-                milk_name
-                gender
-                birth_place {
-                    id
-                    latitude
-                    longitude
-                    address
-                }
-                burial_place {
-                    id
-                    latitude
-                    longitude
-                    address
-                }
-                family {
-                    family_id
-                    family_code
-                    name
-                }
-            }
-        }
-    }
-    """
-    class Arguments:
+class CreateUser(ClientIDMutation):
+    class Input:
         username = graphene.String(required=True)
         password = graphene.String(required=True)
         first_name = graphene.String()
@@ -152,92 +58,33 @@ class CreateUser(graphene.Mutation):
         burial_place_id = graphene.ID()
         phone = graphene.String()
         gender = graphene.String()
-        family_id = graphene.ID()
 
     user = graphene.Field(UserType)
 
-    def mutate(self, info, username, password, first_name=None, last_name=None, 
-               email=None, birth_date=None, death_date=None, milk_name=None, 
-               birth_place_id=None, burial_place_id=None, phone=None, 
-               gender=None, family_id=None):
+    def mutate_and_get_payload(root, info, **input):
         user = User.objects.create_user(
-            username=username,
-            password=password,
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            birth_date=birth_date,
-            death_date=death_date,
-            milk_name=milk_name,
-            phone=phone,
-            gender=gender
+            username=input.get('username'),
+            password=input.get('password'),
+            first_name=input.get('first_name'),
+            last_name=input.get('last_name'),
+            email=input.get('email'),
+            birth_date=input.get('birth_date'),
+            death_date=input.get('death_date'),
+            milk_name=input.get('milk_name'),
+            phone=input.get('phone'),
+            gender=input.get('gender')
         )
         
-        if birth_place_id:
-            user.birth_place = Location.objects.get(pk=birth_place_id)
-        if burial_place_id:
-            user.burial_place = Location.objects.get(pk=burial_place_id)
-        if family_id:
-            user.family = Family.objects.get(family_id=family_id)
+        if input.get('birth_place_id'):
+            user.birth_place = Location.objects.get(pk=input.get('birth_place_id'))
+        if input.get('burial_place_id'):
+            user.burial_place = Location.objects.get(pk=input.get('burial_place_id'))
             
         user.save()
         return CreateUser(user=user)
 
-class UpdateUser(graphene.Mutation):
-    """
-    更新用户信息
-    
-    示例:
-    mutation {
-        updateUser(
-            id: "1"
-            firstName: "三"
-            lastName: "张"
-            email: "new.email@example.com"
-            birthDate: "1990-01-01"
-            deathDate: null
-            milkName: "新乳名"
-            phone: "13900139000"
-            gender: "male"
-            birthPlaceId: "2"
-            burialPlaceId: null
-            familyId: "1"
-        ) {
-            user {
-                id
-                username
-                first_name
-                last_name
-                email
-                phone
-                birth_date
-                death_date
-                milk_name
-                gender
-                birth_place {
-                    id
-                    latitude
-                    longitude
-                    address
-                }
-                burial_place {
-                    id
-                    latitude
-                    longitude
-                    address
-                }
-                family {
-                    family_id
-                    family_code
-                    name
-                }
-            }
-        }
-    }
-    
-    注意: 此操作需要登录认证
-    """
-    class Arguments:
+class UpdateUser(ClientIDMutation):
+    class Input:
         id = graphene.ID(required=True)
         first_name = graphene.String()
         last_name = graphene.String()
@@ -249,57 +96,67 @@ class UpdateUser(graphene.Mutation):
         burial_place_id = graphene.ID()
         phone = graphene.String()
         gender = graphene.String()
-        family_id = graphene.ID()
 
     user = graphene.Field(UserType)
 
     @login_required
-    def mutate(self, info, id, first_name=None, last_name=None, email=None, 
-               birth_date=None, death_date=None, milk_name=None, 
-               birth_place_id=None, burial_place_id=None, phone=None, 
-               gender=None, family_id=None):
-        user = User.objects.get(pk=id)
+    def mutate_and_get_payload(root, info, **input):
+        user = User.objects.get(pk=input.get('id'))
         
-        if first_name is not None:
-            user.first_name = first_name
-        if last_name is not None:
-            user.last_name = last_name
-        if email is not None:
-            user.email = email
-        if birth_date is not None:
-            user.birth_date = birth_date
-        if death_date is not None:
-            user.death_date = death_date
-        if milk_name is not None:
-            user.milk_name = milk_name
-        if phone is not None:
-            user.phone = phone
-        if gender is not None:
-            user.gender = gender
+        if input.get('first_name') is not None:
+            user.first_name = input.get('first_name')
+        if input.get('last_name') is not None:
+            user.last_name = input.get('last_name')
+        if input.get('email') is not None:
+            user.email = input.get('email')
+        if input.get('birth_date') is not None:
+            user.birth_date = input.get('birth_date')
+        if input.get('death_date') is not None:
+            user.death_date = input.get('death_date')
+        if input.get('milk_name') is not None:
+            user.milk_name = input.get('milk_name')
+        if input.get('phone') is not None:
+            user.phone = input.get('phone')
+        if input.get('gender') is not None:
+            user.gender = input.get('gender')
             
-        if birth_place_id is not None:
-            if birth_place_id:
-                user.birth_place = Location.objects.get(pk=birth_place_id)
+        if input.get('birth_place_id') is not None:
+            if input.get('birth_place_id'):
+                user.birth_place = Location.objects.get(pk=input.get('birth_place_id'))
             else:
                 user.birth_place = None
                 
-        if burial_place_id is not None:
-            if burial_place_id:
-                user.burial_place = Location.objects.get(pk=burial_place_id)
+        if input.get('burial_place_id') is not None:
+            if input.get('burial_place_id'):
+                user.burial_place = Location.objects.get(pk=input.get('burial_place_id'))
             else:
                 user.burial_place = None
                 
-        if family_id is not None:
-            if family_id:
-                user.family = Family.objects.get(family_id=family_id)
-            else:
-                user.family = None
-                
+            
         user.save()
         return UpdateUser(user=user)
 
-class UserMutation(graphene.ObjectType):
+class UserMutation(graphene.AbstractType):
     create_location = CreateLocation.Field()
     create_family = CreateFamily.Field()
     create_user = CreateUser.Field()
     update_user = UpdateUser.Field()
+
+    register = mutations.Register.Field()
+    verify_account = mutations.VerifyAccount.Field()
+    resend_activation_email = mutations.ResendActivationEmail.Field()
+    send_password_reset_email = mutations.SendPasswordResetEmail.Field()
+    password_reset = mutations.PasswordReset.Field()
+    password_change = mutations.PasswordChange.Field()
+    archive_account = mutations.ArchiveAccount.Field()
+    delete_account = mutations.DeleteAccount.Field()
+    update_account = mutations.UpdateAccount.Field()
+    send_secondary_email_activation = mutations.SendSecondaryEmailActivation.Field()
+    verify_secondary_email = mutations.VerifySecondaryEmail.Field()
+    swap_emails = mutations.SwapEmails.Field()
+
+    # django-graphql-jwt inheritances
+    token_auth = mutations.ObtainJSONWebToken.Field()
+    verify_token = mutations.VerifyToken.Field()
+    refresh_token = mutations.RefreshToken.Field()
+    revoke_token = mutations.RevokeToken.Field()
