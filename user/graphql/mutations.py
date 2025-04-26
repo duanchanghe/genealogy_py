@@ -4,6 +4,25 @@ from user.graphql.types import UserType, LocationType
 from user.models import User, Location
 
 class CreateLocation(graphene.Mutation):
+    """
+    创建位置
+    
+    示例:
+    mutation {
+        createLocation(
+            latitude: "39.9042"
+            longitude: "116.4074"
+            address: "北京市东城区"
+        ) {
+            location {
+                id
+                latitude
+                longitude
+                address
+            }
+        }
+    }
+    """
     class Arguments:
         latitude = graphene.Decimal(required=True)
         longitude = graphene.Decimal(required=True)
@@ -20,6 +39,52 @@ class CreateLocation(graphene.Mutation):
         return CreateLocation(location=location)
 
 class CreateUser(graphene.Mutation):
+    """
+    创建用户
+    
+    示例:
+    mutation {
+        createUser(
+            username: "张三"
+            password: "password123"
+            email: "zhangsan@example.com"
+            birthday: "1990-01-01"
+            milkName: "小张"
+            phone: "13800138000"
+            birthPlaceId: "1"
+            fatherId: "2"
+            motherId: "3"
+            spouseIds: ["4", "5"]
+        ) {
+            user {
+                id
+                username
+                email
+                phone
+                birthday
+                milkName
+                birthPlace {
+                    id
+                    latitude
+                    longitude
+                    address
+                }
+                father {
+                    id
+                    username
+                }
+                mother {
+                    id
+                    username
+                }
+                spouses {
+                    id
+                    username
+                }
+            }
+        }
+    }
+    """
     class Arguments:
         username = graphene.String(required=True)
         password = graphene.String(required=True)
@@ -65,6 +130,51 @@ class CreateUser(graphene.Mutation):
         return CreateUser(user=user)
 
 class UpdateUser(graphene.Mutation):
+    """
+    更新用户信息
+    
+    示例:
+    mutation {
+        updateUser(
+            id: "1"
+            email: "new.email@example.com"
+            phone: "13900139000"
+            milkName: "新乳名"
+            birthPlaceId: "2"
+            fatherId: "3"
+            motherId: "4"
+            spouseIds: ["5", "6"]
+        ) {
+            user {
+                id
+                username
+                email
+                phone
+                milkName
+                birthPlace {
+                    id
+                    latitude
+                    longitude
+                    address
+                }
+                father {
+                    id
+                    username
+                }
+                mother {
+                    id
+                    username
+                }
+                spouses {
+                    id
+                    username
+                }
+            }
+        }
+    }
+    
+    注意: 此操作需要登录认证
+    """
     class Arguments:
         id = graphene.ID(required=True)
         email = graphene.String()
