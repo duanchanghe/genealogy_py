@@ -56,6 +56,14 @@ class Relationship(models.Model):
     status = models.CharField(max_length=20, choices=(('pending', '待处理'), ('accepted', '已接受'), ('rejected', '已拒绝')), default='pending', verbose_name='关系状态')
     details = models.TextField(blank=True, null=True, verbose_name='关系详情')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+
+    class Meta:
+        verbose_name = '关系'
+        verbose_name_plural = verbose_name
+        
+    def __str__(self):
+        return f"{self.from_user.username} -> {self.to_user.username} ({self.relationship_type})"
 
 class User(AbstractUser):
     # Override AbstractUser fields with verbose_name
