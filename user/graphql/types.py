@@ -17,3 +17,13 @@ class UserType(DjangoObjectType):
         fields = ('id', 'username', 'first_name', 'last_name', 'email', 'is_staff', 
                  'is_active', 'date_joined', 'birth_date', 'death_date', 'milk_name', 
                  'birth_place', 'burial_place', 'phone', 'family', 'gender') 
+
+class RelationshipType(DjangoObjectType):
+    class Meta:
+        model = Relationship
+        fields = ('id', 'user', 'relative', 'relationship_type')
+
+
+
+
+

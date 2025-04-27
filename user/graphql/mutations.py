@@ -1,7 +1,19 @@
 import graphene
 from graphql_jwt.decorators import login_required
-from user.graphql.types import UserType, LocationType, FamilyType
+from user.graphql.types import UserType, LocationType, FamilyType, AuthResponse
 from user.models import User, Location, Family
+from django.contrib.auth import get_user_model, login, logout
+from django.contrib.auth.hashers import make_password
+from graphql_jwt.shortcuts import get_token
+from user.graphql.utils import (
+    generate_verification_code,
+    validate_phone,
+    save_verification_code,
+    verify_code,
+    validate_password
+)
+
+User = get_user_model()
 
 class CreateLocation(graphene.Mutation):
     """
@@ -298,8 +310,117 @@ class UpdateUser(graphene.Mutation):
         user.save()
         return UpdateUser(user=user)
 
+class SendVerificationCode(graphene.Mutation):
+    class Arguments:
+        phone = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    errors = graphene.List(graphene.String)
+
+    def mutate(self, info, phone):
+        if not validate_phone(phone):
+            return SendVerificationCode(success=False, errors=["无效的手机号格式"])
+
+        try:
+            user = User.objects.get(phone=phone)
+        except User.DoesNotExist:
+            user = User(phone=phone)
+        
+        code = generate_verification_code()
+        user.save_verification_code(code)
+        
+        # TODO: 在实际生产环境中，这里应该调用短信服务发送验证码
+        print(f"验证码: {code}")  # 仅用于测试
+        
+        return SendVerificationCode(success=True, errors=None)
+
+class RegisterWithPhone(graphene.Mutation):
+    class Arguments:
+        phone = graphene.String(required=True)
+        code = graphene.String(required=True)
+        password = graphene.String(required=True)
+        username = graphene.String()
+
+    Output = AuthResponse
+
+    def mutate(self, info, phone, code, password, username=None):
+        if not validate_phone(phone):
+            return AuthResponse(success=False, errors=["无效的手机号格式"])
+
+        is_valid_password, password_error = validate_password(password)
+        if not is_valid_password:
+            return AuthResponse(success=False, errors=[password_error])
+
+        try:
+            user = User.objects.get(phone=phone)
+            if user.is_active:
+                return AuthResponse(success=False, errors=["该手机号已注册"])
+        except User.DoesNotExist:
+            user = User(phone=phone)
+
+        if not user.verify_code(code):
+            return AuthResponse(success=False, errors=["验证码无效或已过期"])
+
+        if not username:
+            username = phone
+
+        user.username = username
+        user.set_password(password)
+        user.is_active = True
+        user.verification_code = None
+        user.verification_code_expires = None
+        user.save()
+
+        # 生成token并登录
+        token = get_token(user)
+        login(info.context, user)
+
+        return AuthResponse(success=True, errors=None, user=user, token=token)
+
+class LoginWithPhone(graphene.Mutation):
+    class Arguments:
+        phone = graphene.String(required=True)
+        code = graphene.String(required=True)
+
+    Output = AuthResponse
+
+    def mutate(self, info, phone, code):
+        try:
+            user = User.objects.get(phone=phone)
+        except User.DoesNotExist:
+            return AuthResponse(success=False, errors=["用户不存在"])
+
+        if not user.is_active:
+            return AuthResponse(success=False, errors=["账号已被禁用"])
+
+        if not user.verify_code(code):
+            return AuthResponse(success=False, errors=["验证码无效或已过期"])
+
+        user.verification_code = None
+        user.verification_code_expires = None
+        user.save()
+
+        # 生成token并登录
+        token = get_token(user)
+        login(info.context, user)
+
+        return AuthResponse(success=True, errors=None, user=user, token=token)
+
+class Logout(graphene.Mutation):
+    success = graphene.Boolean()
+
+    def mutate(self, info):
+        if info.context.user.is_authenticated:
+            logout(info.context)
+            return Logout(success=True)
+        return Logout(success=False)
+
 class UserMutation(graphene.ObjectType):
     create_location = CreateLocation.Field()
     create_family = CreateFamily.Field()
     create_user = CreateUser.Field()
     update_user = UpdateUser.Field()
+    send_verification_code = SendVerificationCode.Field()
+    register_with_phone = RegisterWithPhone.Field()
+    login_with_phone = LoginWithPhone.Field()
+    logout = Logout.Field()
