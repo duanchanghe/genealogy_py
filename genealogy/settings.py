@@ -53,9 +53,8 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    'user.backends.PhonePasswordBackend',
-    'user.backends.PhoneVerificationCodeBackend',
     'django.contrib.auth.backends.ModelBackend',
+    'graphql_jwt.backends.JSONWebTokenBackend',
 ]
 
 GRAPHQL_JWT = {
@@ -147,5 +146,6 @@ GRAPHENE = {
     'SCHEMA': 'genealogy.schema.schema',
     'MIDDLEWARE': [
         'graphene_django.debug.DjangoDebugMiddleware',
+        'graphql_jwt.middleware.JSONWebTokenMiddleware',
     ],
 }

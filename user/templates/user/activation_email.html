@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>激活您的账号</title>
+</head>
+<body>
+    <h2>您好，{{ user.username }}！</h2>
+    <p>感谢您注册我们的家谱管理系统。请点击下面的链接激活您的账号：</p>
+    <p>
+        <a href="http://{{ domain }}/activate/{{ uid }}/{{ token }}/">
+            激活账号
+        </a>
+    </p>
+    <p>如果链接无法点击，请复制以下地址到浏览器地址栏：</p>
+    <p>http://{{ domain }}/activate/{{ uid }}/{{ token }}/</p>
+    <p>此链接有效期为24小时。</p>
+    <p>如果这不是您的操作，请忽略此邮件。</p>
+    <p>谢谢！</p>
+</body>
+</html> 

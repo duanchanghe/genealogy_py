@@ -1,5 +1,6 @@
 from graphene_django import DjangoObjectType
 from user.models import User, Location, Family, Relationship
+import graphene
 
 class LocationType(DjangoObjectType):
     class Meta:
@@ -22,6 +23,13 @@ class RelationshipType(DjangoObjectType):
     class Meta:
         model = Relationship
         fields = ('id', 'user', 'relative', 'relationship_type')
+
+class AuthResponse(graphene.ObjectType):
+    """认证响应类型"""
+    token = graphene.String()
+    user = graphene.Field(UserType)
+    success = graphene.Boolean()
+    errors = graphene.List(graphene.String)
 
 
 
