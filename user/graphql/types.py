@@ -10,19 +10,17 @@ class LocationType(DjangoObjectType):
 class FamilyType(DjangoObjectType):
     class Meta:
         model = Family
-        fields = ('family_id', 'family_code', 'name', 'description', 'location')
+        fields = ('id', 'family_id', 'family_code', 'name', 'description', 'location')
 
 class UserType(DjangoObjectType):
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'is_staff', 
-                 'is_active', 'date_joined', 'birth_date', 'death_date', 'milk_name', 
-                 'birth_place', 'burial_place', 'phone', 'family', 'gender') 
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'phone_number', 'location', 'family', 'is_active', 'is_staff') 
 
 class RelationshipType(DjangoObjectType):
     class Meta:
         model = Relationship
-        fields = ('id', 'user', 'relative', 'relationship_type')
+        fields = ('id', 'user', 'related_user', 'relationship_type', 'start_date', 'end_date')
 
 class AuthResponse(graphene.ObjectType):
     """认证响应类型"""

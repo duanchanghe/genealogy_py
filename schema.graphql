@@ -1,0 +1,445 @@
+type Query {
+  allUsers(offset: Int = 0, limit: Int = 10): [UserType]
+  allFamilies(offset: Int = 0, limit: Int = 10): [FamilyType]
+  allLocations(offset: Int = 0, limit: Int = 10): [LocationType]
+  allRelationships(userId: ID!, offset: Int = 0, limit: Int = 10): [RelationshipType]
+  user(id: ID!): UserType
+  family(id: ID!): FamilyType
+  location(id: ID!): LocationType
+  relationship(id: ID!): RelationshipType
+}
+
+type UserType {
+  id: ID!
+  username: String!
+  firstName: String!
+  lastName: String!
+  email: String!
+  isStaff: Boolean!
+  isActive: Boolean!
+  dateJoined: DateTime!
+  birthDate: Date
+  deathDate: Date
+  milkName: String
+  birthPlace: LocationType
+  burialPlace: LocationType
+  phone: String!
+  family: FamilyType
+  gender: UserUserGenderChoices!
+}
+
+"""
+The `DateTime` scalar type represents a DateTime
+value as specified by
+[iso8601](https://en.wikipedia.org/wiki/ISO_8601).
+"""
+scalar DateTime
+
+"""
+The `Date` scalar type represents a Date
+value as specified by
+[iso8601](https://en.wikipedia.org/wiki/ISO_8601).
+"""
+scalar Date
+
+type LocationType {
+  id: ID!
+  latitude: Decimal!
+  longitude: Decimal!
+  address: String
+}
+
+"""The `Decimal` scalar type represents a python Decimal."""
+scalar Decimal
+
+type FamilyType {
+  familyId: UUID!
+  familyCode: String!
+  name: String!
+  description: String
+  location: LocationType
+}
+
+"""
+Leverages the internal Python implementation of UUID (uuid.UUID) to provide native UUID objects
+in fields, resolvers and input.
+"""
+scalar UUID
+
+"""An enumeration."""
+enum UserUserGenderChoices {
+  """男"""
+  MALE
+
+  """女"""
+  FEMALE
+
+  """其他"""
+  OTHER
+}
+
+type RelationshipType {
+  relationshipType: UserRelationshipRelationshipTypeChoices!
+}
+
+"""An enumeration."""
+enum UserRelationshipRelationshipTypeChoices {
+  """父母"""
+  PARENT
+
+  """子女"""
+  CHILD
+
+  """兄弟姐妹"""
+  SIBLING
+
+  """配偶"""
+  SPOUSE
+}
+
+type Mutation {
+  """
+  创建位置
+  
+  示例:
+  mutation {
+      createLocation(
+          latitude: "39.9042"
+          longitude: "116.4074"
+          address: "北京市东城区"
+      ) {
+          location {
+              id
+              latitude
+              longitude
+              address
+          }
+      }
+  }
+  """
+  createLocation(address: String, latitude: Decimal!, longitude: Decimal!): CreateLocation
+
+  """
+  创建家族
+  
+  示例:
+  mutation {
+      createFamily(
+          familyCode: "FAM001"
+          name: "张氏家族"
+          description: "张氏家族描述"
+          locationId: "1"
+      ) {
+          family {
+              family_id
+              family_code
+              name
+              description
+              location {
+                  id
+                  latitude
+                  longitude
+                  address
+              }
+          }
+      }
+  }
+  """
+  createFamily(description: String, familyCode: String!, locationId: ID, name: String!): CreateFamily
+
+  """
+  创建用户
+  
+  示例:
+  mutation {
+      createUser(
+          username: "张三"
+          password: "password123"
+          firstName: "三"
+          lastName: "张"
+          email: "zhangsan@example.com"
+          birthDate: "1990-01-01"
+          deathDate: null
+          milkName: "小张"
+          phone: "13800138000"
+          gender: "male"
+          birthPlaceId: "1"
+          burialPlaceId: null
+          familyId: "1"
+      ) {
+          user {
+              id
+              username
+              first_name
+              last_name
+              email
+              phone
+              birth_date
+              death_date
+              milk_name
+              gender
+              birth_place {
+                  id
+                  latitude
+                  longitude
+                  address
+              }
+              burial_place {
+                  id
+                  latitude
+                  longitude
+                  address
+              }
+              family {
+                  family_id
+                  family_code
+                  name
+              }
+          }
+      }
+  }
+  """
+  createUser(birthDate: Date, birthPlaceId: ID, burialPlaceId: ID, deathDate: Date, email: String, familyId: ID, firstName: String, gender: String, lastName: String, milkName: String, password: String!, phone: String, username: String!): CreateUser
+
+  """
+  更新用户信息
+  
+  示例:
+  mutation {
+      updateUser(
+          id: "1"
+          firstName: "三"
+          lastName: "张"
+          email: "new.email@example.com"
+          birthDate: "1990-01-01"
+          deathDate: null
+          milkName: "新乳名"
+          phone: "13900139000"
+          gender: "male"
+          birthPlaceId: "2"
+          burialPlaceId: null
+          familyId: "1"
+      ) {
+          user {
+              id
+              username
+              first_name
+              last_name
+              email
+              phone
+              birth_date
+              death_date
+              milk_name
+              gender
+              birth_place {
+                  id
+                  latitude
+                  longitude
+                  address
+              }
+              burial_place {
+                  id
+                  latitude
+                  longitude
+                  address
+              }
+              family {
+                  family_id
+                  family_code
+                  name
+              }
+          }
+      }
+  }
+  
+  注意: 此操作需要登录认证
+  """
+  updateUser(birthDate: Date, birthPlaceId: ID, burialPlaceId: ID, deathDate: Date, email: String, familyId: ID, firstName: String, gender: String, id: ID!, lastName: String, milkName: String, phone: String): UpdateUser
+  sendVerificationCode(phone: String!): SendVerificationCode
+  registerWithPhone(code: String!, password: String!, phone: String!, username: String): AuthResponse
+  loginWithPhone(code: String!, phone: String!): AuthResponse
+  logout: Logout
+}
+
+"""
+创建位置
+
+示例:
+mutation {
+    createLocation(
+        latitude: "39.9042"
+        longitude: "116.4074"
+        address: "北京市东城区"
+    ) {
+        location {
+            id
+            latitude
+            longitude
+            address
+        }
+    }
+}
+"""
+type CreateLocation {
+  location: LocationType
+}
+
+"""
+创建家族
+
+示例:
+mutation {
+    createFamily(
+        familyCode: "FAM001"
+        name: "张氏家族"
+        description: "张氏家族描述"
+        locationId: "1"
+    ) {
+        family {
+            family_id
+            family_code
+            name
+            description
+            location {
+                id
+                latitude
+                longitude
+                address
+            }
+        }
+    }
+}
+"""
+type CreateFamily {
+  family: FamilyType
+}
+
+"""
+创建用户
+
+示例:
+mutation {
+    createUser(
+        username: "张三"
+        password: "password123"
+        firstName: "三"
+        lastName: "张"
+        email: "zhangsan@example.com"
+        birthDate: "1990-01-01"
+        deathDate: null
+        milkName: "小张"
+        phone: "13800138000"
+        gender: "male"
+        birthPlaceId: "1"
+        burialPlaceId: null
+        familyId: "1"
+    ) {
+        user {
+            id
+            username
+            first_name
+            last_name
+            email
+            phone
+            birth_date
+            death_date
+            milk_name
+            gender
+            birth_place {
+                id
+                latitude
+                longitude
+                address
+            }
+            burial_place {
+                id
+                latitude
+                longitude
+                address
+            }
+            family {
+                family_id
+                family_code
+                name
+            }
+        }
+    }
+}
+"""
+type CreateUser {
+  user: UserType
+}
+
+"""
+更新用户信息
+
+示例:
+mutation {
+    updateUser(
+        id: "1"
+        firstName: "三"
+        lastName: "张"
+        email: "new.email@example.com"
+        birthDate: "1990-01-01"
+        deathDate: null
+        milkName: "新乳名"
+        phone: "13900139000"
+        gender: "male"
+        birthPlaceId: "2"
+        burialPlaceId: null
+        familyId: "1"
+    ) {
+        user {
+            id
+            username
+            first_name
+            last_name
+            email
+            phone
+            birth_date
+            death_date
+            milk_name
+            gender
+            birth_place {
+                id
+                latitude
+                longitude
+                address
+            }
+            burial_place {
+                id
+                latitude
+                longitude
+                address
+            }
+            family {
+                family_id
+                family_code
+                name
+            }
+        }
+    }
+}
+
+注意: 此操作需要登录认证
+"""
+type UpdateUser {
+  user: UserType
+}
+
+type SendVerificationCode {
+  success: Boolean
+  errors: [String]
+}
+
+"""认证响应类型"""
+type AuthResponse {
+  token: String
+  user: UserType
+  success: Boolean
+  errors: [String]
+}
+
+type Logout {
+  success: Boolean
+}
